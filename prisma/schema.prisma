@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum EventStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+}
+
+model User {
+  id        String   @id @default(uuid())
+  clerkId   String   @unique
+  email     String   @unique
+  name      String?
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  events    Event[]  @relation("Coordinator")
+  
+  @@map("users")
+}
+
+model Event {
+  id              String      @id @default(uuid())
+  title           String
+  description     String?     @db.Text
+  clubName        String
+  startDate       DateTime
+  endDate         DateTime?
+  location        String
+  type            String      
+  status          EventStatus @default(DRAFT)
+  
+  // People Involed
+  coordinatorId   String
+  coordinator     User        @relation("Coordinator", fields: [coordinatorId], references: [id])
+  facultyAdvisor  String?
+  chiefGuest      String?
+
+  // Metrics
+  participantCount Int?
+  
+  // Media
+  media           Media[]
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  @@map("events")
+}
+
+model Media {
+  id        String    @id @default(uuid())
+  url       String
+  type      MediaType
+  eventId   String
+  event     Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  
+  @@map("media")
+}
